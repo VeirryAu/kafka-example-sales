@@ -25,5 +25,17 @@ To deployment and testing of this project we will use
 2. AWS Fargate
 3. AWS ECS
 
+# Run this application
+
+docker-compose up --build
+
+npm test
+
+# API Docs
+
+curl -X POST http://localhost:3000/sales \
+  -H "Content-Type: application/json" \
+  -d '{"product":"Coffee","quantity":2,"price":3.5}'
+
 # Result
 
