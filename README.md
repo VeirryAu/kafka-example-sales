@@ -39,3 +39,8 @@ curl -X POST http://localhost:3000/sales \
 
 # Result
 
+# Stresstest
+
+npm run stress
+# or with env overrides
+STRESS_CONN=100 STRESS_DURATION=30 node src/stress/stresstest.js
