@@ -18,7 +18,9 @@ const salesRoutes = require("./routes/sales");
 
 // after requiring models
 const { start: startOutboxWorker } = require("./workers/outboxWorker");
+const { start: startDlqWorker } = require("./workers/dlqWorker");
 startOutboxWorker();
+startDlqWorker();
 
 const app = express();
 app.use(bodyParser.json());

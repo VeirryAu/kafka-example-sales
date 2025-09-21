@@ -7,7 +7,10 @@ const OutboxDLQ = sequelize.define("OutboxDLQ", {
   originalOutboxId: { type: DataTypes.BIGINT, allowNull: true },
   topic: { type: DataTypes.STRING, allowNull: false },
   payload: { type: DataTypes.JSON, allowNull: false },
-  reason: { type: DataTypes.TEXT, allowNull: true }
+  reason: { type: DataTypes.TEXT, allowNull: true },
+  status: { type: DataTypes.STRING, defaultValue: "PENDING" },   // NEW
+  attempts: { type: DataTypes.INTEGER, defaultValue: 0 },        // NEW
+  lastError: { type: DataTypes.TEXT, allowNull: true }           // NEW
 }, {
   tableName: "outbox_dlq",
   timestamps: true
