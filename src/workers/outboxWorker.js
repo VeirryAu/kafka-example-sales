@@ -42,21 +42,21 @@ async function processBatch () {
     }
 
     await Outbox.update({ status: "SENDING" }, { where: { id: ids }, transaction: t });
-    await t.commit();
 
     // process each row outside transaction
     for (const row of rows) {
-      await processRow(row).catch(err => {
+      await processRow(row, t).catch(err => {
         console.error("Error processing outbox row", row.id, err);
       });
     }
+    await t.commit();
   } catch (err) {
     console.error("Error claiming outbox rows", err);
     try { await t.rollback(); } catch (e) { }
   }
 }
 
-async function processRow (row) {
+async function processRow (row, trans) {
   try {
     // publish to kafka
     await producer.send({
@@ -65,7 +65,7 @@ async function processRow (row) {
     });
 
     // mark SENT
-    await Outbox.update({ status: "SENT", attempts: row.attempts + 1 }, { where: { id: row.id } });
+    await Outbox.update({ status: "SENT", attempts: row.attempts + 1 }, { where: { id: row.id }, transaction: trans });
   } catch (err) {
     console.error("Failed to send outbox row", row.id, err);
     const attempts = row.attempts + 1;
@@ -78,11 +78,11 @@ async function processRow (row) {
         reason: (err && err.message) ? err.message : JSON.stringify(err)
       });
 
-      await Outbox.destroy({ where: { id: row.id } }); // remove original
+      await Outbox.destroy({ where: { id: row.id }, transaction: trans }); // remove original
       console.warn(`Outbox row ${row.id} moved to DLQ after ${attempts} attempts`);
     } else {
       // mark BACK as PENDING with incremented attempts and lastError
-      await Outbox.update({ status: "PENDING", attempts, lastError: (err && err.message) ? err.message : JSON.stringify(err) }, { where: { id: row.id } });
+      await Outbox.update({ status: "PENDING", attempts, lastError: (err && err.message) ? err.message : JSON.stringify(err) }, { where: { id: row.id }, transaction: trans });
     }
   }
 }
