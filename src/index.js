@@ -6,12 +6,19 @@ const { sequelize } = require("./db");
 require("./models/Sale");
 require("./models/Inventory");
 require("./models/Accounting");
+require("./models/Outbox");
+require("./models/OutboxDLQ");
+
 
 // Consumers (async workers)
 require("./consumers/inventoryConsumer");
 require("./consumers/accountingConsumer");
 
 const salesRoutes = require("./routes/sales");
+
+// after requiring models
+const { start: startOutboxWorker } = require("./workers/outboxWorker");
+startOutboxWorker();
 
 const app = express();
 app.use(bodyParser.json());

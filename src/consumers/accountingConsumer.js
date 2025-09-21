@@ -1,5 +1,6 @@
 const kafka = require("../kafka");
 const Accounting = require("../models/Accounting");
+const ConsumerDLQ = require("../models/ConsumerDLQ");
 
 const consumer = kafka.consumer({ groupId: "accounting-group" });
 
@@ -10,8 +11,18 @@ const consumer = kafka.consumer({ groupId: "accounting-group" });
   await consumer.run({
     eachMessage: async ({ message }) => {
       const event = JSON.parse(message.value.toString());
-      console.log("📥 Accounting event:", event);
-      await Accounting.create(event);
+      try {
+        console.log("📥 Accounting event:", event);
+        await Accounting.create(event);
+      } catch (err) {
+        console.error("Processing failed:", err);
+        await ConsumerDLQ.create({
+          topic: "inventory-topic",
+          payload: event,
+          consumer: "inventoryConsumer",
+          reason: err.message
+        });
+      }
     },
   });
 })();
